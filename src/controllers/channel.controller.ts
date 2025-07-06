@@ -1,6 +1,6 @@
 // src/controllers/channel.controller.ts
 import { Request, Response } from 'express';
-import { getTelegramChannelList, saveTelegramChannel } from '../services/channel.service';
+import { getChannelManagerList, getTelegramChannelList, saveTelegramChannel } from '../services/channel.service';
 
 export const listTelegramChannels = async (_req: Request, res: Response) => {
   try {
@@ -54,6 +54,24 @@ export const saveTelegramChannelController = async (req: Request, res: Response)
     res.status(500).json({
       status: 'error',
       message: 'Failed to save telegram channel',
+    });
+  }
+};
+
+export const listSavedTelegramChannels = async (_req: Request, res: Response) => {
+  try {
+    const data = await getChannelManagerList();
+
+    res.json({
+      status: "success",
+      message: "Channels fetched successfully",
+      data,
+    });
+  } catch (error) {
+    console.error("❌ Error listing channels:", error);
+    res.status(500).json({
+      status: "error",
+      message: "Failed to fetch channel list",
     });
   }
 };
