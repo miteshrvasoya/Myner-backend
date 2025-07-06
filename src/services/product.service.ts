@@ -30,44 +30,68 @@ const mockProducts: any[] = [
 // };
 
 export const searchProducts = async (query: string): Promise<Product[]> => {
-    console.log("🔍 Searching products with query:", query);
+  console.log("🔍 Searching products with query:", query);
 
-    const records = await listRecords(
-        `
+  const records = await listRecords(
+    `
     SELECT 
-      id, product_name, price, quantity, seller_username, 
-      source_channel, message_text, created_at
-    FROM products
-    WHERE LOWER(product_name) LIKE $1
-       OR LOWER(message_text) LIKE $1
-       OR LOWER(source_channel) LIKE $1
-       OR LOWER(seller_username) LIKE $1
-    ORDER BY created_at DESC
+      p.id AS product_id,
+      p.product_name,
+      p.price,
+      p.quantity,
+      p.created_at AS product_created_at,
+
+      -- Seller Info
+      s.id AS seller_id,
+      s.telegram_id AS seller_telegram_id,
+      s.username AS seller_username,
+      s.display_name AS seller_name,
+      s.phone AS seller_phone,
+
+      -- Message Info
+      m.message_text,
+      m.posted_at AS message_posted_at,
+
+      -- Channel Info
+      c.title AS channel_title
+
+    FROM products p
+    LEFT JOIN sellers s ON p.seller_id = s.id
+    LEFT JOIN messages m ON p.message_id = m.id
+    LEFT JOIN telegram_channels c ON p.source_channel_id = c.id
+
+    WHERE LOWER(p.product_name) LIKE $1
+    ORDER BY p.created_at DESC
     `,
-        [`%${query.toLowerCase()}%`]
-    );
+    [`%${query.toLowerCase()}%`]
+  );
 
-    console.log("📦 Found products:", records);
+  console.log("📦 Found products:", records.length);
 
-    const formatted: any[] = records.map((p: any) => ({
-        id: `p${p.id.toString().padStart(3, "0")}`,
-        name: p.product_name || "Unnamed Product",
-        price: p.price || 0,
-        min_quantity: p.quantity || 0,
-        channel: p.source_channel || "Unknown Channel",
-        contact: {
-            phone: p.seller_username || "N/A",
-            whatsapp: p.seller_username
-                ? `https://wa.me/${p.seller_username.replace(/\D/g, "")}`
-                : "https://wa.me/",
-        },
-        posted_at: p.created_at,
-        category: "General",
-        image: "/placeholder.svg?height=200&width=200",
-        description: p.message_text || "No description available.",
-    }));
+  const formatted: any[] = records.map((p: any) => ({
+    id: `p${p.product_id?.toString().padStart(3, "0")}`,
+    name: p.product_name || "Unnamed Product",
+    price: p.price || 0,
+    min_quantity: p.quantity || 0,
+    posted_at: p.message_posted_at || p.product_created_at || new Date(),
 
-    console.log("📦 Formatted products:", formatted);
+    channel: p.channel_title || "Unknown Channel",
 
-    return formatted;
+    contact: {
+      name: p.seller_name || "Unknown Seller",
+      phone: p.seller_phone || "N/A",
+      telegram: p.seller_username ? `https://t.me/${p.seller_username}` : "N/A",
+      whatsapp: p.seller_phone
+        ? `https://wa.me/${p.seller_phone.replace(/\D/g, "")}`
+        : "https://wa.me/",
+    },
+
+    description: p.message_text || "No description available.",
+    category: "General", // Placeholder if category logic isn't available yet
+    image: "/placeholder.svg?height=200&width=200", // Placeholder until image support
+  }));
+
+  console.log("📦 Formatted products:", formatted);
+
+  return formatted;
 };
