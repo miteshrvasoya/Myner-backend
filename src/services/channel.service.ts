@@ -1,5 +1,6 @@
 // src/services/channel.service.ts
 
+import { channel } from "diagnostics_channel";
 import { insertManyRecords, insertRecord, listRecords } from "../utils/dbUtils";
 import { fetchTelegramChannels } from "./telegram.service";
 
@@ -111,6 +112,7 @@ export const getChannelManagerList = async () => {
   return rows.map((row) => ({
     id: row.id,
     name: row.name,
+    channelId: row.channel_id,
     platform: "telegram",
     type: row.type || "public",
     members: 0, // optional if not stored
