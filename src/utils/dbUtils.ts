@@ -70,6 +70,30 @@ export const insertManyRecords = async (
   }
 };
 
+export const updateRecord = async (
+  table: string,
+  data: Record<string, any>,
+  whereClause: string,
+  whereParams: any[] = []
+) => {
+  const keys = Object.keys(data);
+  const values = Object.values(data);
+
+  const setClause = keys.map((key, i) => `${key} = $${i + 1}`).join(", ");
+
+  // Offset WHERE clause placeholders
+  const whereOffset = keys.length;
+  const modifiedWhereClause = whereClause.replace(/\$(\d+)/g, (_, num) => {
+    return `$${parseInt(num) + whereOffset}`;
+  });
+
+  const query = `UPDATE ${table} SET ${setClause} WHERE ${modifiedWhereClause}`;
+  const allParams = [...values, ...whereParams];
+
+  return pool.query(query, allParams);
+};
+
+
 export const deleteRecords = async (query: string, params: any[] = []) => {
   const { rowCount } = await pool.query(query, params);
   return rowCount;

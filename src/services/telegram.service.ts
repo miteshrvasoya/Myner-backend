@@ -5,57 +5,40 @@ import { insertOrUpdateTelegramChannel } from '../models/telegramChannel.model';
 export const fetchTelegramMessages = async (
     channelId: number,
     accessHash: number,
-    limit: number = 10
+    limit: number = 10,
+    lastSyncTime?: string,
+    username?: string
 ): Promise<any[]> => {
     return new Promise((resolve, reject) => {
-        const pythonProcess = spawn('.venv/bin/python', [
-            'src/services/telegram_fetcher.py',
+
+        console.log(`🔄 Fetching messages for channelId: ${channelId}, accessHash: ${accessHash}, limit: ${limit}, lastSyncTime: ${lastSyncTime} username: ${username}`);
+
+        const args = [
+            "src/services/telegram_fetcher.py",
             channelId.toString(),
             accessHash.toString(),
-            limit.toString()
-        ]);
+            limit.toString(),
+            lastSyncTime || '',
+            username || ''
+        ];
+        if (lastSyncTime) args.push(lastSyncTime);
 
-        console.log(`🔄 Fetching Telegram messages from channel ${channelId}...`);
+        const pythonProcess = spawn(".venv/bin/python", args);
+        let data = "";
+        let errorOutput = "";
 
-        let data = '';
-        let errorOutput = '';
+        pythonProcess.stdout.on("data", (chunk) => (data += chunk.toString()));
+        pythonProcess.stderr.on("data", (err) => (errorOutput += err.toString()));
 
-        // Accumulate stdout from Python
-        pythonProcess.stdout.on('data', (chunk) => {
-            console.log(`📥 Received data chunk: ${chunk}`);
-            data += chunk.toString();
-        });
-
-        // Accumulate stderr (Python errors)
-        pythonProcess.stderr.on('data', (error) => {
-            console.error(`❌ Python Error: ${error}`);
-            errorOutput += error.toString();
-        });
-
-        // Handle process completion
-        pythonProcess.on('close', (code) => {
-            console.log('✅ Telegram fetch script completed.');
-
-            if (errorOutput) {
-                console.error("❌ Python reported an error during execution:", errorOutput);
-                return reject(errorOutput);
-            }
-
+        pythonProcess.on("close", () => {
+            if (errorOutput) return reject(errorOutput);
             try {
-                
-                console.log(`📥 Received ${data.length} messages from Telegram.`);
-                console.log(`📂 Check Type of Data: ${typeof data}`);
+                console.log(`📥 Received data: ${data}`);
                 const messages = JSON.parse(data);
-
-                if (Array.isArray(messages)) {
-                    resolve(messages);
-                } else {
-                    reject("❌ Python returned unexpected format.");
-                }
+                if (Array.isArray(messages)) return resolve(messages);
+                reject("Unexpected response format");
             } catch (err: any) {
-                console.error("❌ Failed to parse Telegram messages:", err.message);
-                console.log("📥 Raw data received:", data);
-                reject("Failed to parse Telegram messages: " + err.message);
+                reject("JSON parse error: " + err.message);
             }
         });
     });

@@ -6,6 +6,7 @@ import bodyParser from 'body-parser';
 import productRoutes from './routes/product.route';
 import telegramRoutes from './routes/telegram.route';
 import channelRoutes from './routes/channel.route';
+import messageRoutes from './routes/messages.route';
 import { initializeDB } from './utils/db';
 
 dotenv.config();
@@ -21,6 +22,7 @@ app.use(cors());
 app.use('/api/products', productRoutes);
 app.use('/api/telegram', telegramRoutes);
 app.use('/api/channels', channelRoutes);
+app.use("/api/message", messageRoutes);
 
 // Start Server
 initializeDB().then(() => {

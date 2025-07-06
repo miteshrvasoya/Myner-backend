@@ -3,61 +3,79 @@ import sys
 import json
 import asyncio
 import os
+from datetime import datetime
 from dotenv import load_dotenv
 from telethon import TelegramClient
-from telethon.errors.rpcerrorlist import ChannelInvalidError
+from telethon.errors.rpcerrorlist import ChannelInvalidError, UsernameNotOccupiedError
 from telethon.tl.types import InputPeerChannel
 
 load_dotenv()
 
-# api_id = int(os.getenv("TELEGRAM_API_ID"))
-# api_hash = os.getenv("TELEGRAM_API_KEY")
-# phone = os.getenv("TELEGRAM_PHONE_NUMBER")
-api_id = 23656874
-api_hash = "48570c59577532e72a5075021eeecbab"
-phone = "+919601281948"
+# Telegram credentials (use your own or from .env)
+api_id = int(os.getenv("TELEGRAM_API_ID", 23656874))
+api_hash = os.getenv("TELEGRAM_API_HASH", "48570c59577532e72a5075021eeecbab")
+phone = os.getenv("TELEGRAM_PHONE", "+919601281948")
 
+# Session file path
 SESSION_FILE = os.path.join(os.path.dirname(__file__), "myner_session")
 client = TelegramClient(SESSION_FILE, api_id, api_hash)
 
-channel_id = 1682721934
-access_hash = -3281610255801187991
-
-async def fetch(channel_id, access_hash, limit=10):
+async def fetch(channel_id, access_hash, limit=10, last_sync_time=None, username=None):
     try:
         await client.start(phone=phone)
 
-        # Safely create entity
+        # Resolve entity via username (preferred fallback) or ID + access_hash
         try:
-            entity = InputPeerChannel(channel_id=int(channel_id), access_hash=int(access_hash))
+            if username:
+                entity = await client.get_entity(username)
+            else:
+                entity = await client.get_entity(InputPeerChannel(channel_id=int(channel_id), access_hash=int(access_hash)))
+        except UsernameNotOccupiedError:
+            print(json.dumps({"error": "Username not found or occupied."}))
+            return
         except Exception as e:
-            print(json.dumps({"error": f"Invalid channel entity: {str(e)}"}))
+            print(json.dumps({"error": f"Failed to resolve entity: {str(e)}"}))
             return
 
         messages = []
+
         async for msg in client.iter_messages(entity, limit=limit):
             if msg.message:
+                # Filter by last sync time
+                if last_sync_time:
+                    try:
+                        sync_time = datetime.fromisoformat(last_sync_time)
+                        if msg.date <= sync_time:
+                            break
+                    except Exception as e:
+                        print(json.dumps({"error": f"Invalid last_sync_time format: {str(e)}"}))
+                        return
+
                 messages.append({
                     "text": msg.message,
                     "date": str(msg.date),
-                    "sender_id": msg.sender_id
+                    "sender_id": msg.sender_id,
+                    "message_id": msg.id
                 })
 
-        print(json.dumps(messages))  # ✔️ Output to Node (stdout only)
-    
-    except ChannelInvalidError as ce:
-        print(json.dumps({"error": "ChannelInvalidError: You might not be a member of this channel or access_hash is wrong."}))
+        print(json.dumps(messages))  # Send to Node.js
+    except ChannelInvalidError:
+        print(json.dumps({"error": "ChannelInvalidError: Not a member or invalid access_hash"}))
     except Exception as e:
         print(json.dumps({"error": str(e)}))
 
 
 if __name__ == "__main__":
     # if len(sys.argv) < 3:
-    #     print(json.dumps({"error": "Missing required arguments: channel_id and access_hash"}))
+    #     print(json.dumps({"error": "Missing required arguments: channel_id, access_hash"}))
     #     sys.exit(1)
 
-    # channel_id = sys.argv[1]
-    # access_hash = sys.argv[2]
+    channel_id = int(sys.argv[1]) if len(sys.argv) > 1 else 2229967747
+    access_hash = int(sys.argv[2]) if len(sys.argv) > 2 else -5831172659792090000 
     limit = int(sys.argv[3]) if len(sys.argv) > 3 else 10
+    last_sync_time = sys.argv[4] if len(sys.argv) > 4 else None
+    username = sys.argv[5] if len(sys.argv) > 5 else None
 
-    asyncio.run(fetch(channel_id, access_hash, limit))
+    # print(f"🔄 Fetching messages for channel_id: {channel_id}, access_hash: {access_hash}, limit: {limit}, last_sync_time: {last_sync_time}, username: {username}")
+
+    asyncio.run(fetch(channel_id, access_hash, limit, last_sync_time, username))

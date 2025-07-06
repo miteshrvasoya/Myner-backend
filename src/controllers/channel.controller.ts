@@ -27,7 +27,7 @@ export const saveTelegramChannelController = async (req: Request, res: Response)
     console.log('📥 Received channel data:', channelData);
 
     // Basic validation
-    if (!channelData[0].channel_name || !channelData[0].access_hash || !channelData[0].channel_id || !channelData[0].username) {
+    if (!channelData[0].channel_name || !channelData[0].access_hash || !channelData[0].channel_id) {
       console.warn('⚠️ Missing required fields in channel data:');
       // console.warn('Title:', channelData[0].channel_name);
       // console.warn('Access Hash:', channelData[0].access_hash);
