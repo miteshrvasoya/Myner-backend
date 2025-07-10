@@ -1,0 +1,28 @@
+# Use Node base image
+FROM node:18
+
+# Install Python and pip
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip
+
+# Set working directory
+WORKDIR /app
+
+# Copy files
+COPY . .
+
+# Install Node dependencies
+RUN npm install
+
+# Install Python dependencies
+RUN pip3 install -r src/services/requirements.txt
+
+# Set environment variables (optional override with Railway dashboard)
+ENV NODE_ENV=production
+ENV PORT=8000
+
+# Expose port
+EXPOSE 8000
+
+# Run your backend
+CMD ["npm", "run", "start"]
