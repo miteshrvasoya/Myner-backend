@@ -4,9 +4,9 @@
   "description": "Myner - Telegram Product Parser and Search Engine Backend",
   "main": "dist/index.js",
   "scripts": {
-    "start": "ts-node src/index.ts",
+    "start": "ts-node src/server.ts",
     "build": "tsc",
-    "dev": "ts-node-dev src/index.ts"
+    "dev": "ts-node-dev src/server.ts"
   },
   "author": "Your Name",
   "license": "MIT",
