@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { fetchTelegramMessages } from "../services/telegram.service";
 import { insertRecord, selectRecord, updateRecord } from "../utils/dbUtils";
 import { parseWithGemini } from "../services/gemini.service";
+import { parseWithLocalLLM } from "../services/parser.service";
 
 // export const syncChannelMessages = async (req: Request, res: Response) => {
 //   const channelDbId = parseInt(req.params.id);
@@ -60,7 +61,7 @@ import { parseWithGemini } from "../services/gemini.service";
 
 export const syncChannelMessages = async (req: Request, res: Response) => {
   const channelDbId = parseInt(req.params.id);
-  const limit = parseInt(req.query.limit as string) || 20;
+  const limit = undefined;
 
   try {
     const channel = await selectRecord(
@@ -92,7 +93,7 @@ export const syncChannelMessages = async (req: Request, res: Response) => {
 
     let successCount = 0;
     for (const msg of messages) {
-      const parsed = await parseWithGemini(msg.text);
+      const parsed = await parseWithLocalLLM(msg.text);
       if (!parsed) continue;
 
       // Save seller if not exists

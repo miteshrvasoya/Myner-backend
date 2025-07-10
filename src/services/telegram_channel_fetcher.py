@@ -10,16 +10,19 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-api_id = 23656874
-api_hash = "48570c59577532e72a5075021eeecbab"
-phone = "+919601281948"
+api_id = 28547257
+api_hash = "9b63345f165ef7836cf019e8e9210c3f"
+phone = "+919624090688"
 
 SESSION_FILE = os.path.join(os.path.dirname(__file__), "myner_session")
 client = TelegramClient(SESSION_FILE, api_id, api_hash)
 
 async def fetch_channels():
+    print("🔄 Fetching channels...")
     await client.start(phone=phone)
     dialogs = await client.get_dialogs()
+
+    print(f"🔄 Found {len(dialogs)} dialogs.")
 
     result = []
 

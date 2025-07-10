@@ -46,12 +46,18 @@ export const fetchTelegramMessages = async (
 
 export const fetchTelegramChannels = async (): Promise<any[]> => {
     console.log('🔄 Start Fetching Telegram channels...');
+
+    const isWindows = process.platform === 'win32';
+    const pythonPath = isWindows ? ".venv\\Scripts\\python.exe" : ".venv/bin/python";
+
+    console.log(`🔄 Using Python path: ${pythonPath}`);
+
     const scriptPath = path.join(__dirname, 'telegram_channel_fetcher.py');
     console.log(`📂 Using script path: ${scriptPath}`);
 
     return new Promise((resolve, reject) => {
         console.log(`🔄 Starting Telegram channel fetcher script at ${scriptPath}`);
-        const python = spawn('.venv/bin/python', [scriptPath]); // Use your venv Python path
+        const python = spawn("python", [scriptPath]); // Use your venv Python path
         console.log('🔄 Fetching Telegram channels...');
 
         let data = '';

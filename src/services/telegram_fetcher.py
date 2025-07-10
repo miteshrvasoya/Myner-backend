@@ -20,7 +20,7 @@ phone = os.getenv("TELEGRAM_PHONE", "+919601281948")
 SESSION_FILE = os.path.join(os.path.dirname(__file__), "myner_session")
 client = TelegramClient(SESSION_FILE, api_id, api_hash)
 
-async def fetch(channel_id, access_hash, limit=10, last_sync_time=None, username=None):
+async def fetch(channel_id, access_hash, limit, last_sync_time=None, username=None):
     try:
         await client.start(phone=phone)
 
@@ -70,8 +70,8 @@ if __name__ == "__main__":
     #     print(json.dumps({"error": "Missing required arguments: channel_id, access_hash"}))
     #     sys.exit(1)
 
-    channel_id = int(sys.argv[1]) if len(sys.argv) > 1 else 2229967747
-    access_hash = int(sys.argv[2]) if len(sys.argv) > 2 else -5831172659792090000 
+    channel_id = int(sys.argv[1])
+    access_hash = int(sys.argv[2])
     limit = int(sys.argv[3]) if len(sys.argv) > 3 else 10
     last_sync_time = sys.argv[4] if len(sys.argv) > 4 else None
     username = sys.argv[5] if len(sys.argv) > 5 else None
