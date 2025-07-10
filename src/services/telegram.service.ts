@@ -6,39 +6,45 @@ export const fetchTelegramMessages = async (
     channelId: number,
     accessHash: number,
     limit: number = 10,
-    lastSyncTime?: string,
-    username?: string
+    lastSyncTime: string = "",
+    username: string = ""
 ): Promise<any[]> => {
     return new Promise((resolve, reject) => {
-
         console.log(`🔄 Fetching messages for channelId: ${channelId}, accessHash: ${accessHash}, limit: ${limit}, lastSyncTime: ${lastSyncTime} username: ${username}`);
 
-        const args = [
-            "src/services/telegram_fetcher.py",
-            channelId.toString(),
-            accessHash.toString(),
-            limit.toString(),
-            lastSyncTime || '',
-            username || ''
-        ];
-        if (lastSyncTime) args.push(lastSyncTime);
+        const isWindows = process.platform === 'win32';
+        const pythonPath = isWindows ? "python" : ".venv/bin/python"; // use 'python' on Windows
 
-        const pythonProcess = spawn(".venv/bin/python", args);
+        const scriptPath = path.join(__dirname, "telegram_fetcher.py");
+        console.log(`📂 Using script path: ${scriptPath}`);
+        console.log(`🐍 Using Python path: ${pythonPath}`);
+
+        const args = [scriptPath, channelId.toString(), accessHash.toString(), limit.toString(), lastSyncTime, username];
+        if (lastSyncTime) args.push(lastSyncTime);
+        if (username) args.push(username);
+
+        const pythonProcess = spawn(pythonPath, args);
+
         let data = "";
         let errorOutput = "";
 
-        pythonProcess.stdout.on("data", (chunk) => (data += chunk.toString()));
-        pythonProcess.stderr.on("data", (err) => (errorOutput += err.toString()));
+        pythonProcess.stdout.on("data", (chunk) => {
+            data += chunk.toString();
+        });
+
+        pythonProcess.stderr.on("data", (err) => {
+            errorOutput += err.toString();
+        });
 
         pythonProcess.on("close", () => {
-            if (errorOutput) return reject(errorOutput);
+            if (errorOutput) return reject(new Error(errorOutput));
             try {
                 console.log(`📥 Received data: ${data}`);
                 const messages = JSON.parse(data);
                 if (Array.isArray(messages)) return resolve(messages);
-                reject("Unexpected response format");
+                reject(new Error("Unexpected response format"));
             } catch (err: any) {
-                reject("JSON parse error: " + err.message);
+                reject(new Error("JSON parse error: " + err.message));
             }
         });
     });

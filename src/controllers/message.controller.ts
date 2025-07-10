@@ -61,7 +61,7 @@ import { parseWithLocalLLM } from "../services/parser.service";
 
 export const syncChannelMessages = async (req: Request, res: Response) => {
   const channelDbId = parseInt(req.params.id);
-  const limit = undefined;
+  const limit = 300;
 
   try {
     const channel = await selectRecord(

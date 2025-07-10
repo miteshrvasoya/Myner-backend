@@ -12,15 +12,15 @@ from telethon.tl.types import InputPeerChannel
 load_dotenv()
 
 # Telegram credentials (use your own or from .env)
-api_id = int(os.getenv("TELEGRAM_API_ID", 23656874))
-api_hash = os.getenv("TELEGRAM_API_HASH", "48570c59577532e72a5075021eeecbab")
-phone = os.getenv("TELEGRAM_PHONE", "+919601281948")
+api_id = int(os.getenv("TELEGRAM_API_ID", 28547257))
+api_hash = os.getenv("TELEGRAM_API_HASH", "9b63345f165ef7836cf019e8e9210c3f")
+phone = os.getenv("TELEGRAM_PHONE", "+919624090688")
 
 # Session file path
 SESSION_FILE = os.path.join(os.path.dirname(__file__), "myner_session")
 client = TelegramClient(SESSION_FILE, api_id, api_hash)
 
-async def fetch(channel_id, access_hash, limit, last_sync_time=None, username=None):
+async def fetch(channel_id, access_hash, limit = 300, last_sync_time=None, username=None):
     try:
         await client.start(phone=phone)
 
